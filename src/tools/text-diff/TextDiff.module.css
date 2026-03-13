@@ -1,0 +1,27 @@
+.diffResult {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
+  border-radius: 6px;
+  min-height: 400px;
+  overflow: auto;
+}
+
+.added {
+  background-color: rgba(70, 149, 74, 0.3);
+  color: #89d185;
+}
+
+.removed {
+  background-color: rgba(200, 71, 71, 0.3);
+  color: #f14c4c;
+  text-decoration: line-through;
+}
+
+.unchanged {
+  color: #d4d4d4;
+}
