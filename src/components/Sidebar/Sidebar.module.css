@@ -32,3 +32,25 @@
   flex: 1;
   padding-top: 8px;
 }
+
+/* 未选中条目：浅灰色，在深色背景上清晰可读 */
+.menu :global(.ant-menu-item) {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.menu :global(.ant-menu-item .ant-menu-item-icon),
+.menu :global(.ant-menu-item .anticon) {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* hover 时变亮 */
+.menu :global(.ant-menu-item:hover),
+.menu :global(.ant-menu-item:hover .anticon) {
+  color: #fff !important;
+}
+
+/* 选中条目：使用高亮色，与未选中明显区分 */
+.menu :global(.ant-menu-item-selected),
+.menu :global(.ant-menu-item-selected .anticon) {
+  color: #1677ff !important;
+}
