@@ -1,4 +1,4 @@
-import { ReactNode, LazyExoticComponent, FC } from 'react';
+import type { ReactNode, LazyExoticComponent, FC } from 'react';
 
 export interface ToolMeta {
   id: string;

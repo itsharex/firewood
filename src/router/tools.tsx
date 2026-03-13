@@ -7,7 +7,7 @@ import {
   FieldTimeOutlined,
   KeyOutlined,
 } from '@ant-design/icons';
-import { ToolMeta } from '../types/tool';
+import type { ToolMeta } from '../types/tool';
 
 const tools: ToolMeta[] = [
   {
