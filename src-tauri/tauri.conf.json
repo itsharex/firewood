@@ -8,11 +8,15 @@
   },
   "package": {
     "productName": "firewood",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "tauri": {
     "allowlist": {
-      "all": false
+      "all": false,
+      "updater": true,
+      "process": {
+        "relaunch": true
+      }
     },
     "bundle": {
       "active": true,
@@ -51,7 +55,12 @@
       "csp": null
     },
     "updater": {
-      "active": false
+      "active": true,
+      "dialog": false,
+      "endpoints": [
+        "https://github.com/ifmagic/firewood/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENCREFCN0MxQjA3RTZFMjEKUldRaGJuNnd3YmZheTM0TzRkdFFuNDRwcW4wZ3VrZnJOb2FPMjV2OGtWZG5yQ3FrUjFYaU04TlMK"
     },
     "windows": [
       {

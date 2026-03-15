@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout, Spin } from 'antd';
 import Sidebar from './components/Sidebar';
+import Updater from './components/Updater';
 import tools from './router/tools';
 import './App.css';
 
@@ -10,6 +11,7 @@ const { Content } = Layout;
 function App() {
   return (
     <BrowserRouter>
+      <Updater />
       <Layout style={{ height: '100vh' }}>
         <Sidebar />
         <Content style={{ overflow: 'auto', background: '#fff' }}>
