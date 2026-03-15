@@ -54,6 +54,22 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Firewood ${{ github.ref_name }}'
           releaseBody: |
+            ## ✨ 新功能
+
+            ### 系统托盘支持
+            - macOS 顶部状态栏现在会显示 Firewood 图标
+            - 点击状态栏图标可快速显示/聚焦应用窗口
+            - 右键状态栏图标可选择「Show Window」或「Quit」
+
+            ### 关闭行为优化
+            - 点击窗口关闭按钮不再退出应用，而是最小化到后台
+            - 可通过状态栏图标或 Dock 图标重新打开窗口
+
+            ### 图标更新
+            - 替换为全新设计的应用图标：深色圆角背景 + 简洁火焰图形
+
+            ---
+
             ## 下载
 
             - **macOS**: 下载 `firewood_x.x.x_universal.dmg`（支持 Intel & Apple Silicon）
