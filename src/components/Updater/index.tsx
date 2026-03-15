@@ -59,9 +59,14 @@ export default function Updater() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // 延迟 3 秒再检查，避免影响启动体验
+    // 启动后 3 秒检查一次
     const timer = setTimeout(() => checkForUpdate(), 3000);
-    return () => clearTimeout(timer);
+    // 之后每 5 小时检查一次
+    const interval = setInterval(() => checkForUpdate(), 5 * 60 * 60 * 1000);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   const checkForUpdate = async () => {
