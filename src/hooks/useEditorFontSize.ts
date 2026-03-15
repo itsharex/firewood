@@ -3,7 +3,7 @@ import { useState } from 'react';
 const STORAGE_KEY = 'firewood_editor_font_size';
 const DEFAULT_SIZE = 15;
 const MIN_SIZE = 10;
-const MAX_SIZE = 28;
+const MAX_SIZE = 32;
 
 export function useEditorFontSize() {
   const [fontSize, setFontSize] = useState<number>(() => {

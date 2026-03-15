@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Input, Button, Space, Row, Col, Typography, Tag } from 'antd';
+import { Input, Button, Space, Typography, Tag } from 'antd';
 import * as Diff from 'diff';
 import ToolLayout from '../../components/ToolLayout';
 import FontSizeControl from '../../components/FontSizeControl';
 import { useEditorFontSize } from '../../hooks/useEditorFontSize';
+import { useResizablePanels } from '../../hooks/useResizablePanels';
 import styles from './TextDiff.module.css';
 
 const { TextArea } = Input;
@@ -14,6 +15,7 @@ export default function TextDiff() {
   const [diffs, setDiffs] = useState<Diff.Change[]>([]);
   const [compared, setCompared] = useState(false);
   const { fontSize, increase, decrease } = useEditorFontSize();
+  const { leftPercent, containerRef, onDividerMouseDown } = useResizablePanels();
 
   const compare = () => {
     const result = Diff.diffLines(left, right);
@@ -63,30 +65,62 @@ export default function TextDiff() {
         )}
       </Space>
 
-      <div style={{ position: 'relative' }}>
+      <div
+        ref={containerRef}
+        style={{ position: 'relative', height: 'calc(100% - 80px)', userSelect: 'none' }}
+      >
         {!compared ? (
-          <Row gutter={16}>
-            <Col span={12}>
+          <div style={{ display: 'flex', height: '100%' }}>
+            <div style={{ width: `${leftPercent}%`, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <Typography.Text strong>原文</Typography.Text>
-              <TextArea
-                rows={20}
-                value={left}
-                onChange={(e) => setLeft(e.target.value)}
-                placeholder="请输入原始文本..."
-                style={{ marginTop: 8, fontFamily: 'monospace', fontSize }}
-              />
-            </Col>
-            <Col span={12}>
+              <div style={{ flex: 1, marginTop: 8, position: 'relative' }}>
+                <TextArea
+                  value={left}
+                  onChange={(e) => setLeft(e.target.value)}
+                  placeholder="请输入原始文本..."
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    resize: 'none',
+                    fontFamily: 'monospace',
+                    fontSize,
+                  }}
+                />
+              </div>
+            </div>
+            <div
+              style={{
+                width: 6,
+                height: '100%',
+                cursor: 'col-resize',
+                background: 'rgba(0,0,0,0.06)',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseDown={onDividerMouseDown}
+            >
+              <div style={{ width: 2, height: 32, background: 'rgba(0,0,0,0.2)', borderRadius: 1 }} />
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <Typography.Text strong>修改后</Typography.Text>
-              <TextArea
-                rows={20}
-                value={right}
-                onChange={(e) => setRight(e.target.value)}
-                placeholder="请输入修改后文本..."
-                style={{ marginTop: 8, fontFamily: 'monospace', fontSize }}
-              />
-            </Col>
-          </Row>
+              <div style={{ flex: 1, marginTop: 8, position: 'relative' }}>
+                <TextArea
+                  value={right}
+                  onChange={(e) => setRight(e.target.value)}
+                  placeholder="请输入修改后文本..."
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    resize: 'none',
+                    fontFamily: 'monospace',
+                    fontSize,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         ) : (
           renderDiff()
         )}

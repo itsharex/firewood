@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Button, Space, Alert, Row, Col } from 'antd';
+import { Button, Space, Alert } from 'antd';
 import Editor from '@monaco-editor/react';
 import ToolLayout from '../../components/ToolLayout';
 import FontSizeControl from '../../components/FontSizeControl';
 import { useEditorFontSize } from '../../hooks/useEditorFontSize';
+import { useResizablePanels } from '../../hooks/useResizablePanels';
 
 export default function JsonFormatter() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
   const { fontSize, increase, decrease } = useEditorFontSize();
+  const { leftPercent, containerRef, onDividerMouseDown } = useResizablePanels();
 
   const format = () => {
     try {
@@ -77,8 +79,11 @@ export default function JsonFormatter() {
         <Alert type="error" message={error} style={{ marginBottom: 12 }} showIcon />
       )}
 
-      <Row gutter={16} style={{ height: 'calc(100% - 80px)', position: 'relative' }}>
-        <Col span={12}>
+      <div
+        ref={containerRef}
+        style={{ display: 'flex', height: 'calc(100% - 80px)', position: 'relative', userSelect: 'none' }}
+      >
+        <div style={{ width: `${leftPercent}%`, height: '100%', minWidth: 0 }}>
           <Editor
             height="100%"
             language="json"
@@ -87,8 +92,23 @@ export default function JsonFormatter() {
             theme="vs-dark"
             options={editorOptions}
           />
-        </Col>
-        <Col span={12}>
+        </div>
+        <div
+          style={{
+            width: 6,
+            height: '100%',
+            cursor: 'col-resize',
+            background: 'rgba(255,255,255,0.06)',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onMouseDown={onDividerMouseDown}
+        >
+          <div style={{ width: 2, height: 32, background: 'rgba(255,255,255,0.25)', borderRadius: 1 }} />
+        </div>
+        <div style={{ flex: 1, height: '100%', minWidth: 0 }}>
           <Editor
             height="100%"
             language="json"
@@ -96,9 +116,9 @@ export default function JsonFormatter() {
             theme="vs-dark"
             options={{ ...editorOptions, readOnly: true }}
           />
-        </Col>
+        </div>
         <FontSizeControl fontSize={fontSize} onIncrease={increase} onDecrease={decrease} />
-      </Row>
+      </div>
     </ToolLayout>
   );
 }
