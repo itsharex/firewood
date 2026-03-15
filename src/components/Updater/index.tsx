@@ -2,10 +2,56 @@ import { useEffect, useState } from 'react';
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 import { relaunch } from '@tauri-apps/api/process';
 import { notification, Button, Progress, Space } from 'antd';
+import ReactMarkdown from 'react-markdown';
 
 interface UpdateInfo {
   version: string;
   body: string | null;
+}
+
+/** 只保留 release notes 中"新功能"部分，去掉下载/安装说明 */
+function extractChangelog(body: string | null): string {
+  if (!body) return '包含最新功能与问题修复。';
+  // 截取到"---"分隔线或"## 下载"之前的内容
+  const cutoff = body.search(/^---+$/m);
+  const section = cutoff > 0 ? body.slice(0, cutoff) : body;
+  return section.trim();
+}
+
+function MarkdownBody({ content }: { content: string }) {
+  return (
+    <div style={{ maxHeight: 200, overflowY: 'auto', fontSize: 13, lineHeight: 1.6 }}>
+      <ReactMarkdown
+        components={{
+          h2: ({ children }) => (
+            <div style={{ fontWeight: 600, fontSize: 13, marginTop: 8, marginBottom: 4 }}>
+              {children}
+            </div>
+          ),
+          h3: ({ children }) => (
+            <div style={{ fontWeight: 600, fontSize: 12, marginTop: 6, marginBottom: 2, color: '#555' }}>
+              {children}
+            </div>
+          ),
+          ul: ({ children }) => (
+            <ul style={{ paddingLeft: 16, margin: '2px 0' }}>{children}</ul>
+          ),
+          li: ({ children }) => (
+            <li style={{ marginBottom: 2 }}>{children}</li>
+          ),
+          p: ({ children }) => (
+            <p style={{ margin: '2px 0' }}>{children}</p>
+          ),
+          strong: ({ children }) => (
+            <strong style={{ fontWeight: 600 }}>{children}</strong>
+          ),
+          hr: () => null,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 export default function Updater() {
@@ -31,12 +77,14 @@ export default function Updater() {
 
   const showUpdateNotification = (info: UpdateInfo) => {
     const key = 'firewood-update';
+    const changelog = extractChangelog(info.body);
     notification.info({
       key,
       message: `🎉 发现新版本 v${info.version}`,
-      description: info.body || '包含最新功能与问题修复。',
+      description: <MarkdownBody content={changelog} />,
       duration: 0,
       placement: 'bottomRight',
+      style: { width: 360 },
       btn: (
         <Space>
           <Button size="small" onClick={() => notification.destroy(key)}>
