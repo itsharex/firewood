@@ -2,7 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::{
-    CustomMenuItem, Manager, Menu, MenuItem, RunEvent, Submenu, SystemTray, SystemTrayEvent,
+    CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, SystemTray, SystemTrayEvent,
     SystemTrayMenu, SystemTrayMenuItem,
 };
 
@@ -33,17 +33,26 @@ fn main() {
         let about_firewood = CustomMenuItem::new("about_firewood".to_string(), "About Firewood");
         let check_for_updates =
             CustomMenuItem::new("check_for_updates".to_string(), "Check for Updates…");
-        let app_menu = Menu::new().add_submenu(Submenu::new(
-            "Firewood",
-            Menu::new()
-                .add_item(about_firewood)
-                .add_native_item(MenuItem::Separator)
-                .add_item(check_for_updates)
-                .add_native_item(MenuItem::Separator)
-                .add_native_item(MenuItem::Quit),
-        ));
+        let mut menu = Menu::os_default("Firewood");
 
-        builder = builder.menu(app_menu).on_menu_event(|event| {
+        if let Some(MenuEntry::Submenu(app_submenu)) = menu.items.first_mut() {
+            if !app_submenu.inner.items.is_empty() {
+                app_submenu.inner.items[0] = about_firewood.into();
+            }
+
+            let insert_index = app_submenu
+                .inner
+                .items
+                .iter()
+                .position(|item| matches!(item, MenuEntry::NativeItem(MenuItem::Separator)))
+                .unwrap_or(app_submenu.inner.items.len());
+            app_submenu
+                .inner
+                .items
+                .insert(insert_index, check_for_updates.into());
+        }
+
+        builder = builder.menu(menu).on_menu_event(move |event| {
             if event.menu_item_id() == "about_firewood" {
                 let _ = event.window().app_handle().emit_all("app://about-firewood", ());
             } else if event.menu_item_id() == "check_for_updates" {
@@ -63,7 +72,7 @@ fn main() {
                     show_window(app);
                 }
                 "quit" => {
-                    std::process::exit(0);
+                    app.exit(0);
                 }
                 _ => {}
             },
@@ -82,9 +91,5 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|_app_handle, event| {
-        if let RunEvent::ExitRequested { api, .. } = event {
-            api.prevent_exit();
-        }
-    });
+    app.run(|_, _| {});
 }
