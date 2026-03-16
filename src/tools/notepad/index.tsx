@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Editor, { type OnMount, type BeforeMount } from '@monaco-editor/react';
 import { Button, Dropdown, Empty, Form, Input, Modal, Space, Tabs, message } from 'antd';
+import { open as openExternal } from '@tauri-apps/api/shell';
 import FontSizeControl from '../../components/FontSizeControl';
 import ToolLayout from '../../components/ToolLayout';
 import { useEditorFontSize } from '../../hooks/useEditorFontSize';
@@ -22,6 +24,25 @@ function createTabId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function getUrlAtColumn(line: string, column: number) {
+  const urlRegex = /(https?:\/\/[^\s<>"'`]+|www\.[^\s<>"'`]+)/g;
+  let match = urlRegex.exec(line);
+  while (match) {
+    const start = match.index + 1;
+    const end = start + match[0].length;
+    if (column >= start && column <= end) {
+      return match[0];
+    }
+    match = urlRegex.exec(line);
+  }
+  return null;
+}
+
+function normalizeUrl(raw: string) {
+  const trimmed = raw.trim().replace(/[),.;:!?\]\}]+$/g, '');
+  return trimmed.startsWith('www.') ? `https://${trimmed}` : trimmed;
+}
+
 export default function Notepad() {
   const [tabs, setTabs] = usePersistentState<NoteTab[]>(STORAGE_TABS_KEY, [
     { id: 'default', name: '未命名' },
@@ -32,6 +53,7 @@ export default function Notepad() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [form] = Form.useForm<{ name: string }>();
   const { fontSize, increase, decrease } = useEditorFontSize();
+  const isMac = navigator.platform.toLowerCase().includes('mac');
 
   useEffect(() => {
     if (tabs.length === 0) {
@@ -159,6 +181,67 @@ export default function Notepad() {
   const modalTitle = dialogMode === 'rename' ? '重命名标签页' : '新建标签页';
   const modalOkText = dialogMode === 'rename' ? '保存' : '创建';
 
+  const handleEditorBeforeMount = useCallback<BeforeMount>((monaco) => {
+    monaco.editor.defineTheme('firewood-one-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '5C6370', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'C678DD' },
+        { token: 'number', foreground: 'D19A66' },
+        { token: 'string', foreground: '98C379' },
+        { token: 'regexp', foreground: '56B6C2' },
+        { token: 'type.identifier', foreground: 'E5C07B' },
+      ],
+      colors: {
+        'editor.background': '#1E222A',
+        'editor.foreground': '#ABB2BF',
+        'editorCursor.foreground': '#61AFEF',
+        'editorLineNumber.foreground': '#3F4451',
+        'editor.selectionBackground': '#3E4451',
+        'editor.inactiveSelectionBackground': '#2C313C',
+        'editorIndentGuide.background1': '#2C313C',
+      },
+    });
+  }, []);
+
+  const handleEditorMount = useCallback<OnMount>((editor, monaco) => {
+    monaco.editor.setTheme('firewood-one-dark');
+
+    editor.onMouseDown(async (event) => {
+      const isModifierPressed = isMac ? event.event.metaKey : event.event.ctrlKey;
+      if (!event.event.leftButton || !isModifierPressed) return;
+      if (!event.target.position) return;
+      const model = editor.getModel();
+      if (!model) return;
+
+      const line = model.getLineContent(event.target.position.lineNumber);
+      const matched = getUrlAtColumn(line, event.target.position.column);
+      if (!matched) return;
+
+      const normalized = normalizeUrl(matched);
+      try {
+        await openExternal(normalized);
+      } catch (error) {
+        message.error(`链接打开失败：${String(error)}`);
+      }
+    });
+  }, [isMac]);
+
+  const editorOptions = {
+    minimap: { enabled: false },
+    fontSize,
+    lineNumbers: 'off' as const,
+    glyphMargin: false,
+    folding: false,
+    lineDecorationsWidth: 0,
+    lineNumbersMinChars: 0,
+    wordWrap: 'on' as const,
+    links: true,
+    smoothScrolling: true,
+    scrollBeyondLastLine: false,
+  };
+
   return (
     <ToolLayout title="记事本" description="支持多标签页的本地记事工具（内容仅保存在本机）">
       <Space style={{ marginBottom: 12 }}>
@@ -173,6 +256,9 @@ export default function Notepad() {
         >
           清空当前标签内容
         </Button>
+        <span style={{ color: '#8f9bb3', fontSize: 12 }}>
+          提示：按住 {isMac ? 'Cmd' : 'Ctrl'} 并左键单击链接可直接在浏览器打开
+        </span>
       </Space>
 
       <Tabs
@@ -186,16 +272,15 @@ export default function Notepad() {
 
       <div style={{ position: 'relative', height: 'calc(100% - 110px)' }}>
         {activeTabId ? (
-          <Input.TextArea
+          <Editor
+            height="100%"
+            language="markdown"
             value={content}
-            onChange={(e) => onContentChange(e.target.value)}
-            placeholder="请输入记事内容..."
-            style={{
-              height: '100%',
-              resize: 'none',
-              fontFamily: 'monospace',
-              fontSize,
-            }}
+            onChange={(value) => onContentChange(value ?? '')}
+            beforeMount={handleEditorBeforeMount}
+            onMount={handleEditorMount}
+            theme="firewood-one-dark"
+            options={editorOptions}
           />
         ) : (
           <Empty
