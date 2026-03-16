@@ -1,13 +1,20 @@
-import { Input, Button, Space, Descriptions, DatePicker } from 'antd';
+import { Input, Button, Space, Descriptions, DatePicker, Select } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import ToolLayout from '../../components/ToolLayout';
 import { usePersistentState } from '../../hooks/usePersistentState';
+
+type TimestampUnit = 'milliseconds' | 'seconds';
+
+function toTimestamp(value: Dayjs, unit: TimestampUnit) {
+  return unit === 'milliseconds' ? String(value.valueOf()) : String(value.unix());
+}
 
 export default function Timestamp() {
   const [ts, setTs] = usePersistentState('tool:timestamp:ts', '');
   const [dateValue, setDateValue] = usePersistentState<string | null>('tool:timestamp:date', null);
   const [tsResult, setTsResult] = usePersistentState('tool:timestamp:ts-result', '');
   const [dateResult, setDateResult] = usePersistentState('tool:timestamp:date-result', '');
+  const [dateUnit, setDateUnit] = usePersistentState<TimestampUnit>('tool:timestamp:date-unit', 'milliseconds');
   const date: Dayjs | null = dateValue ? dayjs(dateValue) : null;
 
   const tsToDate = () => {
@@ -20,12 +27,25 @@ export default function Timestamp() {
 
   const dateToTs = () => {
     if (!date) return;
-    setDateResult(String(date.unix()));
+    setDateResult(toTimestamp(date, dateUnit));
   };
 
   const now = () => {
     setTs(String(dayjs().unix()));
     setTsResult(dayjs().format('YYYY-MM-DD HH:mm:ss'));
+  };
+
+  const today = () => {
+    const todayStart = dayjs().startOf('day');
+    setDateValue(todayStart.toISOString());
+    setDateResult(toTimestamp(todayStart, dateUnit));
+  };
+
+  const handleDateUnitChange = (value: TimestampUnit) => {
+    setDateUnit(value);
+    if (date) {
+      setDateResult(toTimestamp(date, value));
+    }
   };
 
   return (
@@ -53,14 +73,30 @@ export default function Timestamp() {
           <Descriptions.Item label="选择日期">
             <Space>
               <DatePicker
-                showTime
                 value={date}
+                showTime={{ defaultOpenValue: dayjs().startOf('day') }}
                 onChange={(d) => setDateValue(d ? d.toISOString() : null)}
               />
               <Button type="primary" onClick={dateToTs}>转换</Button>
+              <Button onClick={today}>当前日期</Button>
             </Space>
           </Descriptions.Item>
-          <Descriptions.Item label="Unix 时间戳（秒）">
+          <Descriptions.Item
+            label={(
+              <Space size={8}>
+                <span>Unix 时间戳</span>
+                <Select
+                  value={dateUnit}
+                  onChange={handleDateUnitChange}
+                  options={[
+                    { value: 'milliseconds', label: '毫秒' },
+                    { value: 'seconds', label: '秒' },
+                  ]}
+                  style={{ width: 88 }}
+                />
+              </Space>
+            )}
+          >
             <Input value={dateResult} readOnly />
           </Descriptions.Item>
         </Descriptions>
