@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 const STORAGE_KEY = 'firewood_editor_font_size';
-const DEFAULT_SIZE = 15;
+const DEFAULT_SIZE = 17;
 const MIN_SIZE = 10;
 const MAX_SIZE = 32;
 

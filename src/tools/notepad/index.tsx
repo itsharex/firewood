@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Dropdown, Empty, Form, Input, Modal, Space, Tabs, message } from 'antd';
+import FontSizeControl from '../../components/FontSizeControl';
 import ToolLayout from '../../components/ToolLayout';
+import { useEditorFontSize } from '../../hooks/useEditorFontSize';
 import { usePersistentState } from '../../hooks/usePersistentState';
 
 interface NoteTab {
@@ -29,6 +31,7 @@ export default function Notepad() {
   const [dialogMode, setDialogMode] = useState<'create' | 'rename' | null>(null);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [form] = Form.useForm<{ name: string }>();
+  const { fontSize, increase, decrease } = useEditorFontSize();
 
   useEffect(() => {
     if (tabs.length === 0) {
@@ -181,20 +184,28 @@ export default function Notepad() {
         onChange={setActiveTabId}
       />
 
-      {activeTabId ? (
-        <Input.TextArea
-          value={content}
-          onChange={(e) => onContentChange(e.target.value)}
-          placeholder="请输入记事内容..."
-          style={{ height: 'calc(100% - 110px)', resize: 'none', fontFamily: 'monospace' }}
-        />
-      ) : (
-        <Empty
-          description="当前没有标签页，请点击右侧 + 新建"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          style={{ marginTop: 36 }}
-        />
-      )}
+      <div style={{ position: 'relative', height: 'calc(100% - 110px)' }}>
+        {activeTabId ? (
+          <Input.TextArea
+            value={content}
+            onChange={(e) => onContentChange(e.target.value)}
+            placeholder="请输入记事内容..."
+            style={{
+              height: '100%',
+              resize: 'none',
+              fontFamily: 'monospace',
+              fontSize,
+            }}
+          />
+        ) : (
+          <Empty
+            description="当前没有标签页，请点击右侧 + 新建"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            style={{ marginTop: 36 }}
+          />
+        )}
+        <FontSizeControl fontSize={fontSize} onIncrease={increase} onDecrease={decrease} />
+      </div>
 
       <Modal
         title={modalTitle}
