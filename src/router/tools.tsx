@@ -18,6 +18,13 @@ const tools: ToolMeta[] = [
     component: lazy(() => import('../tools/json-formatter/index.tsx')),
   },
   {
+    id: 'timestamp',
+    name: '时间戳转换',
+    icon: <FieldTimeOutlined />,
+    description: 'Unix 时间戳与日期互转',
+    component: lazy(() => import('../tools/timestamp/index.tsx')),
+  },
+  {
     id: 'text-diff',
     name: '文本 Diff',
     icon: <DiffOutlined />,
@@ -37,13 +44,6 @@ const tools: ToolMeta[] = [
     icon: <LinkOutlined />,
     description: 'URL 编码与解码',
     component: lazy(() => import('../tools/url-codec/index.tsx')),
-  },
-  {
-    id: 'timestamp',
-    name: '时间戳转换',
-    icon: <FieldTimeOutlined />,
-    description: 'Unix 时间戳与日期互转',
-    component: lazy(() => import('../tools/timestamp/index.tsx')),
   },
   {
     id: 'hash',
