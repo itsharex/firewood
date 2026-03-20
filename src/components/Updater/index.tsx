@@ -4,19 +4,11 @@ import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
 import { relaunch } from '@tauri-apps/api/process';
 import { notification, Button, Progress, Space } from 'antd';
 import ReactMarkdown from 'react-markdown';
+import { cacheUpdateNotes, extractChangelog } from '../../utils/updateNotes';
 
 interface UpdateInfo {
   version: string;
   body: string | null;
-}
-
-/** 只保留 release notes 中"新功能"部分，去掉下载/安装说明 */
-function extractChangelog(body: string | null): string {
-  if (!body) return '包含最新功能与问题修复。';
-  // 截取到"---"分隔线或"## 下载"之前的内容
-  const cutoff = body.search(/^---+$/m);
-  const section = cutoff > 0 ? body.slice(0, cutoff) : body;
-  return section.trim();
 }
 
 function MarkdownBody({ content }: { content: string }) {
@@ -82,6 +74,13 @@ export default function Updater() {
   const checkForUpdate = async (manual = false) => {
     try {
       const { shouldUpdate, manifest } = await checkUpdate();
+      if (manifest?.body) {
+        cacheUpdateNotes({
+          version: manifest.version,
+          body: extractChangelog(manifest.body),
+          checkedAt: Date.now(),
+        });
+      }
       if (shouldUpdate && manifest) {
         showUpdateNotification({ version: manifest.version, body: manifest.body ?? null });
       } else if (manual) {

@@ -67,6 +67,24 @@
   border: 1px solid #eaf1f6;
 }
 
+.infoItemButton {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.infoItemButton:hover {
+  border-color: #cddff0;
+  background: #f6fbff;
+}
+
+.infoHint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #5f7b97;
+}
+
 .tags {
   display: flex;
   gap: 8px;
@@ -81,6 +99,35 @@
   background: #f7fbff;
   color: #365069;
   padding: 3px 10px;
+}
+
+.notesLoading {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.notesBody {
+  max-height: 420px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.notesBody h2 {
+  margin: 8px 0 4px;
+  font-size: 14px;
+}
+
+.notesBody p {
+  margin: 4px 0;
+}
+
+.notesBody ul {
+  padding-left: 18px;
+  margin: 4px 0;
 }
 
 @media (max-width: 640px) {
