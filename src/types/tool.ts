@@ -6,4 +6,5 @@ export interface ToolMeta {
   icon: ReactNode;
   description: string;
   component: LazyExoticComponent<FC>;
+  visible?: boolean; // 默认为 true，可选字段
 }
