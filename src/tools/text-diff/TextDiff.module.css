@@ -57,6 +57,62 @@
   text-decoration: line-through;
 }
 
+/* 修改块（removed + added 配对） */
+.modifiedChunk {
+  border-color: rgba(139, 148, 158, 0.20);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 修改块内的 removed 行 */
+.modRemovedLine {
+  background-color: rgba(248, 81, 73, 0.14);
+}
+
+.modRemovedLine .lineContent {
+  color: #ffb1ad;
+}
+
+.modRemovedLine .lineMarker {
+  color: #f85149;
+}
+
+/* 修改块内的 added 行 */
+.modAddedLine {
+  background-color: rgba(46, 160, 67, 0.16);
+}
+
+.modAddedLine .lineContent {
+  color: #7ee787;
+}
+
+.modAddedLine .lineMarker {
+  color: #3fb950;
+}
+
+/* inline 高亮：removed 词级高亮 */
+.inlineRemoved {
+  background-color: rgba(255, 200, 50, 0.38);
+  color: #ffe08a;
+  border-radius: 3px;
+  padding: 1px 4px;
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 224, 138, 0.6);
+  box-shadow: 0 0 0 1px rgba(255, 200, 50, 0.25);
+}
+
+/* inline 高亮：added 词级高亮 */
+.inlineAdded {
+  background-color: rgba(255, 200, 50, 0.38);
+  color: #ffe08a;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(255, 200, 50, 0.25);
+}
+
 .unchangedContainer {
   margin-bottom: 10px;
 }

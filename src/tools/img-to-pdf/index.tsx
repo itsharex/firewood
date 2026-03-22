@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Radio, Upload, message, Typography, Slider, Switch } from 'antd';
+import { Button, Radio, Upload, message, Typography, Slider, Switch, Input } from 'antd';
 import { FilePdfOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import jsPDF from 'jspdf';
@@ -67,6 +67,22 @@ function calcPagePlacements(
   });
 }
 
+/** 将图片 dataUrl 重新编码为指定质量的 JPEG dataUrl */
+function compressImageToJpeg(dataUrl: string, naturalW: number, naturalH: number, quality: number): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = naturalW;
+      canvas.height = naturalH;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, naturalW, naturalH);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function readImageFile(file: File): Promise<ImageItem> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -90,6 +106,7 @@ function readImageFile(file: File): Promise<ImageItem> {
   });
 }
 
+/** 按布局生成 A4 PDF，支持 JPEG 质量压缩 */
 async function buildPDF(
   items: ImageItem[],
   perPage: number,
@@ -97,6 +114,7 @@ async function buildPDF(
   imageScaleRatio: number,
   pageMargin: number,
   lockUniformWhenTwo: boolean,
+  jpegQuality: number = 0.75,
 ): Promise<Uint8Array> {
   const { cols, rows } = getGrid(perPage, dir);
   const usableW = A4_W - 2 * pageMargin;
@@ -104,7 +122,7 @@ async function buildPDF(
   const cellW = (usableW - (cols - 1) * GAP) / cols;
   const cellH = (usableH - (rows - 1) * GAP) / rows;
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
 
   for (let p = 0; p < items.length; p += perPage) {
     if (p > 0) doc.addPage();
@@ -124,12 +142,52 @@ async function buildPDF(
       const ox = pageMargin + col * (cellW + GAP);
       const oy = pageMargin + row * (cellH + GAP);
       const { w, h, dx, dy } = pagePlacements[k];
-      const fmt = item.file.type === 'image/png' ? 'PNG' : 'JPEG';
-      doc.addImage(item.dataUrl, fmt, ox + dx, oy + dy, w, h);
+      // 统一压缩为 JPEG 以减小体积
+      const imgData = await compressImageToJpeg(item.dataUrl, item.naturalW, item.naturalH, jpegQuality);
+      doc.addImage(imgData, 'JPEG', ox + dx, oy + dy, w, h);
     }
   }
 
   return new Uint8Array(doc.output('arraybuffer'));
+}
+
+/** 解析用户输入的大小限制字符串，返回字节数，无效返回 null */
+function parseMaxSizeMB(input: string): number | null {
+  const trimmed = input.trim().toLowerCase().replace(/m[b]?$/, '');
+  if (!trimmed) return null;
+  const num = parseFloat(trimmed);
+  if (isNaN(num) || num <= 0) return null;
+  return num * 1024 * 1024;
+}
+
+/** 以二分搜索压缩质量来满足文件大小限制 */
+async function buildPDFWithSizeLimit(
+  builder: (quality: number) => Promise<Uint8Array>,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  // 先用默认质量 0.75 尝试
+  let result = await builder(0.75);
+  if (result.byteLength <= maxBytes) return result;
+
+  // 二分搜索合适的质量
+  let lo = 0.1;
+  let hi = 0.75;
+  for (let i = 0; i < 6; i++) {
+    const mid = (lo + hi) / 2;
+    result = await builder(mid);
+    if (result.byteLength <= maxBytes) {
+      lo = mid;  // 质量还可以再高
+    } else {
+      hi = mid;  // 质量需要再低
+    }
+  }
+  // 用 lo 做最终结果（保证 <= maxBytes 的最高质量）
+  result = await builder(lo);
+  if (result.byteLength > maxBytes) {
+    // 最低质量仍超出，用最低质量输出并提示
+    result = await builder(0.1);
+  }
+  return result;
 }
 
 export default function ImgToPdf() {
@@ -144,6 +202,7 @@ export default function ImgToPdf() {
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([]);
+  const [maxSizeInput, setMaxSizeInput] = useState<string>('');
   const pointerOrigin = useRef<{ idx: number; x: number; y: number } | null>(null);
   const processedUploadUidsRef = useRef<Set<string>>(new Set());
 
@@ -244,14 +303,22 @@ export default function ImgToPdf() {
 
     setGenerating(true);
     try {
-      const pdfBytes = await buildPDF(
-        items,
-        perPage,
-        layoutDir,
-        imageScalePct / 100,
-        pageMargin,
-        lockUniformWhenTwo,
-      );
+      const maxBytes = parseMaxSizeMB(maxSizeInput);
+      let pdfBytes: Uint8Array;
+      if (maxBytes) {
+        pdfBytes = await buildPDFWithSizeLimit(
+          (q) => buildPDF(items, perPage, layoutDir, imageScalePct / 100, pageMargin, lockUniformWhenTwo, q),
+          maxBytes,
+        );
+        const actualMB = (pdfBytes.byteLength / 1024 / 1024).toFixed(2);
+        if (pdfBytes.byteLength > maxBytes) {
+          message.warning(`PDF 最小可压缩至 ${actualMB}MB，无法达到目标大小`);
+        } else {
+          message.info(`实际大小 ${actualMB}MB`);
+        }
+      } else {
+        pdfBytes = await buildPDF(items, perPage, layoutDir, imageScalePct / 100, pageMargin, lockUniformWhenTwo);
+      }
       await writeBinaryFile(savePath, pdfBytes);
       message.success('PDF 已保存');
     } catch (e) {
@@ -435,19 +502,42 @@ export default function ImgToPdf() {
             </div>
           )}
 
+          {/* 输出大小限制 */}
+          {hasImages && (
+            <div className={styles.settingsSection}>
+              <div className={styles.settingRow}>
+                <Text className={styles.settingLabel}>输出大小限制</Text>
+                <Input
+                  className={styles.sizeInput}
+                  size="small"
+                  placeholder="如 2.5M"
+                  value={maxSizeInput}
+                  onChange={(e) => setMaxSizeInput(e.target.value)}
+                  suffix="MB"
+                  allowClear
+                />
+              </div>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                留空不限制；设定后自动压缩图片质量以控制文件大小
+              </Text>
+            </div>
+          )}
+
           {/* 导出 */}
           {hasImages && (
-            <Button
-              className={styles.exportBtn}
-              type="primary"
-              size="large"
-              icon={<FilePdfOutlined />}
-              onClick={handleGenerate}
-              loading={generating}
-              block
-            >
-              导出 PDF · {pageCount} 页
-            </Button>
+            <div className={styles.exportGroup}>
+              <Button
+                className={styles.exportBtn}
+                type="primary"
+                size="large"
+                icon={<FilePdfOutlined />}
+                onClick={handleGenerate}
+                loading={generating}
+                block
+              >
+                导出 PDF · {pageCount} 页
+              </Button>
+            </div>
           )}
         </div>
 

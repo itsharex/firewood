@@ -203,11 +203,23 @@
 }
 
 /* 导出按钮 */
+.exportGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .exportBtn {
   flex-shrink: 0;
   border-radius: 8px;
   height: 40px;
   font-weight: 500;
+}
+
+.sizeInput {
+  width: 120px;
+  margin-left: auto;
 }
 
 /* ── 右侧预览面板 ── */

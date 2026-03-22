@@ -65,18 +65,104 @@ export default function TextDiff() {
     ));
   };
 
-  const renderDiff = () => (
-    <div className={styles.diffResult} style={{ fontSize }}>
-      {diffs.map((part, i) => (
-        part.added ? (
+  /** 对一对 removed/added 行做 word-level diff，返回带高亮的 span */
+  const renderInlineHighlight = (
+    removedLine: string,
+    addedLine: string,
+  ): { removedSpans: React.ReactNode; addedSpans: React.ReactNode } => {
+    const wordDiffs = Diff.diffWords(removedLine, addedLine);
+    const removed: React.ReactNode[] = [];
+    const added: React.ReactNode[] = [];
+    wordDiffs.forEach((seg, j) => {
+      if (seg.added) {
+        added.push(<span key={j} className={styles.inlineAdded}>{seg.value}</span>);
+      } else if (seg.removed) {
+        removed.push(<span key={j} className={styles.inlineRemoved}>{seg.value}</span>);
+      } else {
+        removed.push(<span key={`r${j}`}>{seg.value}</span>);
+        added.push(<span key={`a${j}`}>{seg.value}</span>);
+      }
+    });
+    return {
+      removedSpans: removed.length ? removed : ' ',
+      addedSpans: added.length ? added : ' ',
+    };
+  };
+
+  /** 渲染一对 removed+added 块，逐行做 word-level 高亮 */
+  const renderModifiedPair = (removedPart: Diff.Change, addedPart: Diff.Change, key: string) => {
+    const removedLines = getLines(removedPart.value);
+    const addedLines = getLines(addedPart.value);
+    const maxLen = Math.max(removedLines.length, addedLines.length);
+    const elements: React.ReactNode[] = [];
+
+    for (let li = 0; li < maxLen; li++) {
+      const rLine = li < removedLines.length ? removedLines[li] : null;
+      const aLine = li < addedLines.length ? addedLines[li] : null;
+
+      if (rLine !== null && aLine !== null) {
+        // 同时有对应行：做 inline word diff
+        const { removedSpans, addedSpans } = renderInlineHighlight(rLine, aLine);
+        elements.push(
+          <div key={`${key}-r${li}`} className={`${styles.diffLine} ${styles.modRemovedLine}`}>
+            <span className={styles.lineMarker}>-</span>
+            <span className={styles.lineContent}>{removedSpans}</span>
+          </div>,
+        );
+        elements.push(
+          <div key={`${key}-a${li}`} className={`${styles.diffLine} ${styles.modAddedLine}`}>
+            <span className={styles.lineMarker}>+</span>
+            <span className={styles.lineContent}>{addedSpans}</span>
+          </div>,
+        );
+      } else if (rLine !== null) {
+        elements.push(
+          <div key={`${key}-r${li}`} className={`${styles.diffLine} ${styles.modRemovedLine}`}>
+            <span className={styles.lineMarker}>-</span>
+            <span className={styles.lineContent}>{rLine || ' '}</span>
+          </div>,
+        );
+      } else if (aLine !== null) {
+        elements.push(
+          <div key={`${key}-a${li}`} className={`${styles.diffLine} ${styles.modAddedLine}`}>
+            <span className={styles.lineMarker}>+</span>
+            <span className={styles.lineContent}>{aLine || ' '}</span>
+          </div>,
+        );
+      }
+    }
+    return elements;
+  };
+
+  const renderDiff = () => {
+    const elements: React.ReactNode[] = [];
+    let i = 0;
+    while (i < diffs.length) {
+      const part = diffs[i];
+      // 检测 removed + added 配对
+      if (part.removed && i + 1 < diffs.length && diffs[i + 1].added) {
+        elements.push(
+          <div key={i} className={`${styles.chunk} ${styles.modifiedChunk}`}>
+            {renderModifiedPair(part, diffs[i + 1], `mod-${i}`)}
+          </div>,
+        );
+        i += 2;
+      } else if (part.added) {
+        elements.push(
           <div key={i} className={`${styles.chunk} ${styles.addedChunk}`}>
             {renderChunkLines(part.value, '+')}
-          </div>
-        ) : part.removed ? (
+          </div>,
+        );
+        i++;
+      } else if (part.removed) {
+        elements.push(
           <div key={i} className={`${styles.chunk} ${styles.removedChunk}`}>
             {renderChunkLines(part.value, '-')}
-          </div>
-        ) : (
+          </div>,
+        );
+        i++;
+      } else {
+        elements.push(
           <div key={i} className={styles.unchangedContainer}>
             {expandedUnchangedChunks.includes(i) ? (
               <div className={`${styles.chunk} ${styles.unchangedChunk}`}>
@@ -90,11 +176,17 @@ export default function TextDiff() {
                 显示 {countLines(part.value)} 行未变化内容
               </button>
             )}
-          </div>
-        )
-      ))}
-    </div>
-  );
+          </div>,
+        );
+        i++;
+      }
+    }
+    return (
+      <div className={styles.diffResult} style={{ fontSize }}>
+        {elements}
+      </div>
+    );
+  };
 
   const addedLines = diffs.filter((d) => d.added).reduce((sum, d) => sum + countLines(d.value), 0);
   const removedLines = diffs.filter((d) => d.removed).reduce((sum, d) => sum + countLines(d.value), 0);
