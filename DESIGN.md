@@ -16,10 +16,10 @@
 
 | 工具 | 说明 |
 |------|------|
-| JSON 格式化 | 格式化、压缩、语法校验，Monaco Editor 提供语法高亮；支持折叠原始输入面板 |
+| JSON 格式化 | 格式化、压缩、语法校验，Monaco Editor 提供语法高亮；支持折叠原始输入面板；格式化后自动收起原始输入 |
 | 时间戳转换 | Unix timestamp 与人类可读日期互转 |
 | 文本对比 | 左右双栏逐行差异对比，支持面板宽度拖拽调整 |
-| 记事本 | 多标签页编辑，标签支持新建、重命名、关闭；内容持久化到 localStorage；Monaco Editor；Cmd/Ctrl+Click 或 URL 识别后直接在浏览器打开链接 |
+| 记事本 | 多标签页编辑，标签支持新建（随机默认名）、重命名、关闭（二次确认）；内容持久化到 localStorage；Monaco Editor（亮色主题、行号、代码折叠）；右键菜单内置 JSON 格式化（容错解析）；底部状态栏显示当前行字符数与选中字符数；Cmd/Ctrl+Click 打开链接 |
 | Base64 编解码 | Base64 编码与解码 |
 | URL 编解码 | URLEncode / URLDecode |
 | Hash 计算 | MD5 / SHA-1 / SHA-256 |
