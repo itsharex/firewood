@@ -18,9 +18,13 @@ fn show_window(app: &tauri::AppHandle) {
 
 fn main() {
     let show = CustomMenuItem::new("show".to_string(), "Show Window");
+    let check_for_updates_tray =
+        CustomMenuItem::new("check_for_updates".to_string(), "Check for Updates…");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let tray_menu = SystemTrayMenu::new()
         .add_item(show)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(check_for_updates_tray)
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(quit);
 
@@ -70,6 +74,10 @@ fn main() {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "show" => {
                     show_window(app);
+                }
+                "check_for_updates" => {
+                    show_window(app);
+                    let _ = app.emit_all("app://check-for-updates", ());
                 }
                 "quit" => {
                     app.exit(0);

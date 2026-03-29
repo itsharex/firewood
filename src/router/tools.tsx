@@ -58,7 +58,7 @@ const tools: ToolMeta[] = [
     id: 'hash',
     name: 'Hash 计算',
     icon: <KeyOutlined />,
-    description: 'MD5 / SHA1 / SHA256 计算',
+    description: '计算文本或文件的 MD5 / SHA-1 / SHA-256',
     component: lazy(() => import('../tools/hash/index.tsx')),
   },
   {

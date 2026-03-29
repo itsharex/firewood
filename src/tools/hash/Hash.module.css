@@ -1,0 +1,68 @@
+.tabs :global(.ant-tabs-nav) {
+  margin-bottom: 16px;
+}
+
+.dropZone {
+  border: 2px dashed rgba(128, 128, 128, 0.35);
+  border-radius: 10px;
+  padding: 32px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  user-select: none;
+}
+
+.dropZone:hover {
+  border-color: #1677ff;
+}
+
+.dropZoneActive {
+  border-color: #1677ff;
+  background-color: rgba(22, 119, 255, 0.04);
+}
+
+.dropIcon {
+  font-size: 36px;
+  color: #1677ff;
+  margin-bottom: 8px;
+}
+
+.dropHint {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.fileInfo code {
+  font-family: monospace;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  color: rgba(0, 0, 0, 0.45);
+  flex-shrink: 0;
+}
+
+.calculating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 0;
+  color: rgba(0, 0, 0, 0.45);
+}
