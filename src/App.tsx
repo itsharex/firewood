@@ -6,6 +6,7 @@ import AboutDialog from './components/AboutDialog';
 import Updater from './components/Updater';
 import tools from './router/tools';
 import { useToolVisibility } from './hooks/useToolVisibility';
+import { useToolOrder } from './hooks/useToolOrder';
 import './App.css';
 
 const { Content } = Layout;
@@ -13,13 +14,23 @@ const { Content } = Layout;
 function App() {
   const toolIds = tools.map((t) => t.id);
   const { visibility, toggleToolVisibility } = useToolVisibility(toolIds);
+  const { orderedIds, reorder } = useToolOrder(toolIds);
+
+  // Build tool list in user-defined order
+  const toolMap = new Map(tools.map((t) => [t.id, t]));
+  const orderedTools = orderedIds.map((id) => toolMap.get(id)!).filter(Boolean);
 
   return (
     <BrowserRouter>
       <Updater />
       <AboutDialog />
       <Layout style={{ height: '100vh' }}>
-        <Sidebar visibility={visibility} onToggleToolVisibility={toggleToolVisibility} />
+        <Sidebar
+          tools={orderedTools}
+          visibility={visibility}
+          onToggleToolVisibility={toggleToolVisibility}
+          onReorder={reorder}
+        />
         <Content style={{ overflow: 'auto', background: '#fff' }}>
           <Suspense fallback={<Spin style={{ margin: 40 }} />}>
             <Routes>
