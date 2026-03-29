@@ -1,0 +1,48 @@
+.section {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+}
+
+.value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.value :global(.ant-input) {
+  flex: 1;
+}
