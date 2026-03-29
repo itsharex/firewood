@@ -57,17 +57,14 @@ export default function Updater() {
     // 之后每 5 小时检查一次
     const interval = setInterval(() => checkForUpdate(), 5 * 60 * 60 * 1000);
 
-    let unlisten: (() => void) | undefined;
-    listen('app://check-for-updates', async () => {
+    const unlistenPromise = listen('app://check-for-updates', async () => {
       await checkForUpdate(true);
-    }).then((fn) => {
-      unlisten = fn;
     });
 
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
-      unlisten?.();
+      unlistenPromise.then((fn) => fn());
     };
   }, []);
 

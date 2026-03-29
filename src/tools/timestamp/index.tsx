@@ -1,4 +1,5 @@
-import { Input, Button, Select, DatePicker } from 'antd';
+import { Input, Button, Select, DatePicker, message, Tooltip } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import ToolLayout from '../../components/ToolLayout';
 import { usePersistentState } from '../../hooks/usePersistentState';
@@ -98,6 +99,14 @@ export default function Timestamp() {
             <div className={styles.label}>结果</div>
             <div className={styles.value}>
               <Input value={tsResult} readOnly />
+              <Tooltip title="复制">
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  disabled={!tsResult}
+                  onClick={() => { navigator.clipboard.writeText(tsResult); message.success('已复制'); }}
+                />
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -131,6 +140,14 @@ export default function Timestamp() {
             </div>
             <div className={styles.value}>
               <Input value={dateResult} readOnly />
+              <Tooltip title="复制">
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  disabled={!dateResult}
+                  onClick={() => { navigator.clipboard.writeText(dateResult); message.success('已复制'); }}
+                />
+              </Tooltip>
             </div>
           </div>
         </div>
