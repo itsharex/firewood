@@ -233,9 +233,19 @@ export default function Timestamp() {
                       {record.type === 'ts-to-date' ? '时间戳转日期' : '日期转时间戳'}
                     </Tag>
                     <div className={styles.historyDetail}>
-                      <span className={styles.historyTs}>{record.timestamp}</span>
-                      <SwapRightOutlined className={styles.historyArrow} />
-                      <span className={styles.historyDate}>{record.date}</span>
+                      {record.type === 'ts-to-date' ? (
+                        <>
+                          <span className={styles.historyTs}>{record.timestamp}</span>
+                          <SwapRightOutlined className={styles.historyArrow} />
+                          <span className={styles.historyDate}>{record.date}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className={styles.historyDate}>{record.date}</span>
+                          <SwapRightOutlined className={styles.historyArrow} />
+                          <span className={styles.historyTs}>{record.timestamp}</span>
+                        </>
+                      )}
                     </div>
                     <span className={styles.historyUnit}>{record.unit === 'seconds' ? '秒' : '毫秒'}</span>
                     <span className={styles.historyTime}>
