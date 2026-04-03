@@ -1,11 +1,22 @@
-import { Input, Button, Select, DatePicker, message, Tooltip } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { Input, Button, Select, DatePicker, message, Tooltip, Tag, Empty } from 'antd';
+import { CopyOutlined, DeleteOutlined, SwapRightOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import ToolLayout from '../../components/ToolLayout';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import styles from './Timestamp.module.css';
 
 type TimestampUnit = 'milliseconds' | 'seconds';
+
+interface HistoryRecord {
+  id: string;
+  type: 'ts-to-date' | 'date-to-ts';
+  timestamp: string;
+  date: string;
+  unit: TimestampUnit;
+  convertedAt: number;
+}
+
+const MAX_HISTORY = 50;
 
 const unitOptions = [
   { value: 'seconds', label: '秒' },
@@ -22,6 +33,23 @@ function parseTimestamp(ts: string, unit: TimestampUnit) {
   return unit === 'seconds' ? dayjs.unix(num) : dayjs(num);
 }
 
+function formatHistoryForCopy(record: HistoryRecord) {
+  const typeLabel =
+    record.type === 'ts-to-date'
+      ? '时间戳 → 日期'
+      : '日期 → 时间戳';
+
+  const lines = [
+    typeLabel,
+    `日期: ${record.date}`,
+    `时间戳: ${record.timestamp}（${record.unit === 'seconds' ? '秒' : '毫秒'}）`
+  ];
+  if (record.type === 'ts-to-date') {
+    [lines[1], lines[2]] = [lines[2], lines[1]];
+  }
+  return lines.join('\n');
+}
+
 export default function Timestamp() {
   const [ts, setTs] = usePersistentState('tool:timestamp:ts', '');
   const [tsUnit, setTsUnit] = usePersistentState<TimestampUnit>('tool:timestamp:ts-unit', 'seconds');
@@ -29,17 +57,33 @@ export default function Timestamp() {
   const [tsResult, setTsResult] = usePersistentState('tool:timestamp:ts-result', '');
   const [dateResult, setDateResult] = usePersistentState('tool:timestamp:date-result', '');
   const [dateUnit, setDateUnit] = usePersistentState<TimestampUnit>('tool:timestamp:date-unit', 'milliseconds');
+  const [history, setHistory] = usePersistentState<HistoryRecord[]>('tool:timestamp:history', []);
   const date: Dayjs | null = dateValue ? dayjs(dateValue) : null;
+
+  const addHistory = (record: Omit<HistoryRecord, 'id' | 'convertedAt'>) => {
+    const newRecord: HistoryRecord = {
+      ...record,
+      id: crypto.randomUUID(),
+      convertedAt: Date.now(),
+    };
+    setHistory((prev) => [newRecord, ...prev].slice(0, MAX_HISTORY));
+  };
+
+  const clearHistory = () => setHistory([]);
 
   const tsToDate = () => {
     const d = parseTimestamp(ts, tsUnit);
     if (!d) return;
-    setTsResult(d.format('YYYY-MM-DD HH:mm:ss'));
+    const result = d.format('YYYY-MM-DD HH:mm:ss');
+    setTsResult(result);
+    addHistory({ type: 'ts-to-date', timestamp: ts, date: result, unit: tsUnit });
   };
 
   const dateToTs = () => {
     if (!date) return;
-    setDateResult(toTimestamp(date, dateUnit));
+    const result = toTimestamp(date, dateUnit);
+    setDateResult(result);
+    addHistory({ type: 'date-to-ts', timestamp: result, date: date.format('YYYY-MM-DD HH:mm:ss'), unit: dateUnit });
   };
 
   const now = () => {
@@ -48,7 +92,7 @@ export default function Timestamp() {
   };
 
   const today = () => {
-    const todayStart = dayjs().startOf('day');
+    const todayStart = dayjs().startOf('second');
     setDateValue(todayStart.toISOString());
     setDateResult(toTimestamp(todayStart, dateUnit));
   };
@@ -90,8 +134,9 @@ export default function Timestamp() {
                 value={ts}
                 onChange={(e) => setTs(e.target.value)}
                 placeholder="输入 Unix 时间戳"
+                onPressEnter={tsToDate}
               />
-              <Button type="primary" onClick={tsToDate}>转换</Button>
+              <Button type="primary" onClick={tsToDate}>转 换</Button>
               <Button onClick={now}>当前时间</Button>
             </div>
           </div>
@@ -123,7 +168,7 @@ export default function Timestamp() {
                 onChange={(d) => setDateValue(d ? d.toISOString() : null)}
                 style={{ flex: 1 }}
               />
-              <Button type="primary" onClick={dateToTs}>转换</Button>
+              <Button type="primary" onClick={dateToTs}>转 换</Button>
               <Button onClick={today}>当前日期</Button>
             </div>
           </div>
@@ -150,6 +195,69 @@ export default function Timestamp() {
               </Tooltip>
             </div>
           </div>
+        </div>
+
+        {/* 转换历史 */}
+        <div className={styles.section}>
+          <div className={styles.historyHeader}>
+            <h4 className={styles.sectionTitle} style={{ flex: 1, borderBottom: 'none' }}>
+              转换历史
+              {history.length > 0 && <span className={styles.historyCount}>{history.length}</span>}
+            </h4>
+            {history.length > 0 && (
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={clearHistory}
+                className={styles.clearBtn}
+              >
+                清空
+              </Button>
+            )}
+          </div>
+          {history.length === 0 ? (
+            <div className={styles.historyEmpty}>
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无转换记录" />
+            </div>
+          ) : (
+            <div className={styles.historyList}>
+              {history.map((record) => (
+                <div key={record.id} className={styles.historyItem}>
+                  <div className={styles.historyItemMain}>
+                    <Tag
+                      color={record.type === 'ts-to-date' ? 'blue' : 'green'}
+                      className={styles.historyTag}
+                    >
+                      {record.type === 'ts-to-date' ? '时间戳转日期' : '日期转时间戳'}
+                    </Tag>
+                    <div className={styles.historyDetail}>
+                      <span className={styles.historyTs}>{record.timestamp}</span>
+                      <SwapRightOutlined className={styles.historyArrow} />
+                      <span className={styles.historyDate}>{record.date}</span>
+                    </div>
+                    <span className={styles.historyUnit}>{record.unit === 'seconds' ? '秒' : '毫秒'}</span>
+                    <span className={styles.historyTime}>
+                      {dayjs(record.convertedAt).format('HH:mm:ss')}
+                    </span>
+                  </div>
+                  <Tooltip title="复制转换详情">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CopyOutlined />}
+                      className={styles.historyCopyBtn}
+                      onClick={() => {
+                        navigator.clipboard.writeText(formatHistoryForCopy(record));
+                        message.success('已复制');
+                      }}
+                    />
+                  </Tooltip>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </ToolLayout>
