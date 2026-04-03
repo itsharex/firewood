@@ -16,15 +16,15 @@
 
 | 工具 | 说明 |
 |------|------|
-| JSON 格式化 | 格式化、压缩、语法校验，Monaco Editor 提供语法高亮；支持折叠原始输入面板；格式化后自动收起原始输入 |
-| 时间戳转换 | Unix timestamp 与人类可读日期互转，支持秒/毫秒单位切换，结果一键复制 |
+| JSON 格式化 | 格式化、压缩、去除转义、语法校验，Monaco Editor 提供语法高亮；支持折叠原始输入面板；格式化后自动收起原始输入 |
+| 时间戳转换 | Unix timestamp 与人类可读日期互转，支持秒/毫秒单位切换，结果一键复制；转换历史记录（最多 50 条，仅手动点击转换时记录，持久化到 localStorage，支持复制详情与清空） |
 | 文本对比 | 左右双栏逐行差异对比，支持面板宽度拖拽调整 |
 | 记事本 | 多标签页编辑，标签支持新建（随机默认名）、重命名、关闭（二次确认）；内容持久化到 localStorage；Monaco Editor（亮色主题、行号、代码折叠）；右键菜单内置 JSON 格式化（容错解析）；底部状态栏显示当前行字符数与选中字符数；Cmd/Ctrl+Click 打开链接；鼠标滚轮调节字号 |
 | Base64 编解码 | Base64 编码与解码 |
 | URL 编解码 | URLEncode / URLDecode |
 | Hash 计算 | MD5 / SHA-1 / SHA-256，支持文本输入和文件拖拽计算（Web Crypto API + SparkMD5） |
 | 图片排版 | 多张图片合并为 A4 PDF；支持每页 1–4 张、上下/左右排列；缩略图拖拽排序；实时预览；通过 Tauri 原生对话框保存文件 |
-| 文本翻译 | 支持腾讯云 / 百度翻译 API，13 种语言互译；Rust 后端实现 API 签名（TC3-HMAC-SHA256 / MD5）；API 密钥配置面板；原文译文双栏显示；鼠标滚轮调节字号 |
+| 文本翻译 | 支持腾讯云 / 百度翻译 API，13 种语言互译；Rust 后端实现 API 签名（TC3-HMAC-SHA256 / MD5）；API 密钥配置面板；原文译文双栏显示；鼠标滚轮调节字号；翻译历史记录（最多 50 条，仅手动点击翻译时记录，持久化到 localStorage，支持复制详情与清空） |
 
 ---
 
@@ -72,6 +72,7 @@
 | `chrono` | 时间戳生成 |
 | `rand` | 随机数生成（百度 salt）|
 | `serde` + `serde_json` | JSON 序列化 |
+| `tauri-plugin-single-instance` | 单实例运行（窗口重用） |
 
 ### 3.5 工程规范
 
@@ -156,15 +157,23 @@ export interface ToolMeta {
 
 ### 自动更新
 
-通过 Tauri updater 实现。更新源指向 GitHub Releases 的 `latest.json`。检测到新版本后，`Updater` 组件以 Ant Design `notification` 展示更新提示，包含版本号、Markdown 渲染的更新日志及下载进度条，下载完成后提示用户重启。Windows 系统托盘支持“检查更新”菜单项。
+通过 Tauri updater 实现。更新源指向 GitHub Releases 的 `latest.json`。启动后 3 秒自动检查一次，之后每 5 小时定期检查。检测到新版本后，`Updater` 组件以 Ant Design `notification` 展示更新提示，包含版本号、Markdown 渲染的更新日志及下载进度条，下载完成后提示用户重启。macOS 原生菜单和系统托盘均支持“检查更新”菜单项。
 
 ### 关于对话框
 
-`AboutDialog` 组件监听 `app://about-firewood` 自定义事件（由 Rust 侧 macOS 原生菜单项触发），弹出包含版本号和技术栈信息的模态对话框。
+`AboutDialog` 组件监听 `app://about-firewood` 自定义事件（由 Rust 侧 macOS 原生菜单项触发），弹出包含版本号和技术栈信息的模态对话框。点击版本号可查看当前版本更新说明，更新说明从本地 `build.yml` 解析（构建时通过 Vite `?raw` 内联），无需网络请求。
 
 ### 状态持久化
 
 `usePersistentState` hook 封装 `localStorage`，供记事本标签列表、编辑器字号、翻译工具配置等需要跨会话保留状态的场景使用。
+
+### 单实例运行
+
+通过 `tauri-plugin-single-instance` 插件实现。重复启动应用时不会打开新窗口，而是自动聚焦到已有窗口。
+
+### 系统托盘
+
+支持显示窗口、检查更新、退出等托盘菜单操作。关闭窗口时应用不会退出，保持在托盘运行。
 
 ### 侧边栏拖拽排序
 
