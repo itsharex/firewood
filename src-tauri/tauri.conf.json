@@ -53,11 +53,14 @@
       },
       "resources": [],
       "shortDescription": "",
-      "targets": "all",
+      "targets": ["nsis", "dmg"],
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "timestampUrl": "",
+        "nsis": {
+          "installMode": "both"
+        }
       }
     },
     "security": {
