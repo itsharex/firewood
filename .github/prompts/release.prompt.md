@@ -28,7 +28,8 @@ agent: "agent"
 
 ## 下载
 
-- **macOS**: 下载 `firewood_x.x.x_universal.dmg`（支持 Intel & Apple Silicon）
+- **macOS (Apple Silicon)**: 下载 `firewood_x.x.x_aarch64.dmg`
+- **macOS (Intel)**: 下载 `firewood_x.x.x_x64.dmg`
 - **Windows**: 下载 `.exe` 安装包
 
 ## macOS 安装说明

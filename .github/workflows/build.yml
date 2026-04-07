@@ -61,11 +61,7 @@ jobs:
           releaseBody: |
             ## 🐛 修复
 
-            - 修复 Tauri 发布流程在 macOS 更新包签名与平台识别上的兼容性问题，避免「检查更新失败」
-
-            ## 🔧 优化
-
-            - 优化 GitHub Actions 构建矩阵，macOS 按 Intel / Apple Silicon 分目标构建并调整 Rust target 配置
+            - 修复 macOS 下载后提示「已损坏，无法打开」的问题，启用 ad-hoc 代码签名
 
             ---
 
