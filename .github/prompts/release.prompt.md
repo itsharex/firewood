@@ -64,15 +64,10 @@ xattr -cr /Applications/Firewood.app
 > `Cargo.lock` 中第三方 crate 的版本不要碰，只更新 `name = "firewood"` 的那一项。
 
 ## 6. 提交、打 tag、推送
-
-**推送前必须先向用户展示以下摘要并等待确认：**
-- 新版本号
-- 变更说明摘要
-- 将要修改的文件列表
-
-用户确认后再执行：
+通过执行以下这些命令来提交版本更新、打 tag 并推送到远程仓库：
 
 ```
+npm install --package-lock-only
 git add -A
 git commit -m "chore: release v<新版本号>"
 git tag v<新版本号>

@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "firewood",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "identifier": "com.ifmagic.firewood",
   "mainBinaryName": "firewood",
   "build": {
@@ -48,7 +48,7 @@
       "signingIdentity": "-"
     },
     "resources": [],
-    "targets": ["nsis", "dmg"],
+    "targets": ["app", "dmg", "nsis"],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
