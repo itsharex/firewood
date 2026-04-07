@@ -59,13 +59,13 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Firewood ${{ github.ref_name }}'
           releaseBody: |
-            ## ✨ 新功能
+            ## 🐛 修复
 
-            - 记事本编辑器支持基于内容自动识别语言，JSON 等文本可获得更好的语法高亮体验
+            - 修复 Tauri 发布流程在 macOS 更新包签名与平台识别上的兼容性问题，避免「检查更新失败」
 
             ## 🔧 优化
 
-            - 应用主二进制统一命名为 firewood，减少开发与发布环境命名不一致问题
+            - 优化 GitHub Actions 构建矩阵，macOS 按 Intel / Apple Silicon 分目标构建并调整 Rust target 配置
 
             ---
 
