@@ -54,14 +54,13 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Firewood ${{ github.ref_name }}'
           releaseBody: |
-            ## 🐛 修复
+            ## ✨ 新功能
 
-            - 修复文本对比工具点击「显示 N 行未变化内容」无反应的问题
-            - 修复 Windows 自动更新后安装到默认路径而非原始安装目录，导致系统存在两个 Firewood 的问题
+            - 记事本编辑器支持基于内容自动识别语言，JSON 等文本可获得更好的语法高亮体验
 
             ## 🔧 优化
 
-            - Windows 安装包改为仅使用 NSIS 格式，支持用户自选安装目录，更新时正确覆盖原路径
+            - 应用主二进制统一命名为 firewood，减少开发与发布环境命名不一致问题
 
             ---
 

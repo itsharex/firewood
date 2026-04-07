@@ -29,7 +29,7 @@ agent: "agent"
 ## 下载
 
 - **macOS**: 下载 `firewood_x.x.x_universal.dmg`（支持 Intel & Apple Silicon）
-- **Windows**: 下载 `.msi` 或 `.exe` 安装包
+- **Windows**: 下载 `.exe` 安装包
 
 ## macOS 安装说明
 
@@ -40,7 +40,7 @@ agent: "agent"
 xattr -cr /Applications/Firewood.app
 \`\`\`
 
-**方式二**：点击打开提示风险之后, 前往系统设置 -> 隐私与安全性 -> 找到 Firewood, 点击“仍要打开”按钮
+**方式二**：点击打开提示风险之后, 前往系统设置 -> 隐私与安全性 -> 找到 Firewood, 点击"仍要打开"按钮
 ```
 
 ## 4. 决定新版本号
@@ -57,10 +57,10 @@ xattr -cr /Applications/Firewood.app
 - `package.json` → `"version"` 字段
 - `src-tauri/tauri.conf.json` → `package.version` 字段
 - `src-tauri/Cargo.toml` → `[package]` 下的 `version` 字段（从本次起与应用版本保持一致）
-- `src-tauri/Cargo.lock` → `[[package]] name = "app"` 段落的 `version`
+- `src-tauri/Cargo.lock` → `[[package]] name = "firewood"` 段落的 `version`
 
 > 注意：`package-lock.json` 的根版本会在下次 `npm install` 时自动同步，**不要**手动编辑它。
-> `Cargo.lock` 中第三方 crate 的版本不要碰，只更新 `name = "app"` 的那一项。
+> `Cargo.lock` 中第三方 crate 的版本不要碰，只更新 `name = "firewood"` 的那一项。
 
 ## 6. 提交、打 tag、推送
 
