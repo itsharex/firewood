@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Editor, { type OnMount, type BeforeMount } from '@monaco-editor/react';
 import { Button, Dropdown, Empty, Form, Input, Modal, Space, Tabs, message } from 'antd';
 import type { InputRef } from 'antd';
-import { open as openExternal } from '@tauri-apps/api/shell';
+import { openUrl as openExternal } from '@tauri-apps/plugin-opener';
 import FontSizeControl from '../../components/FontSizeControl';
 import ToolLayout from '../../components/ToolLayout';
 import { useEditorFontSize } from '../../hooks/useEditorFontSize';

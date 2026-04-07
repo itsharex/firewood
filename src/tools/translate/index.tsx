@@ -8,7 +8,7 @@ import {
   SwapRightOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke } from '@tauri-apps/api/core';
 import ToolLayout from '../../components/ToolLayout';
 import FontSizeControl from '../../components/FontSizeControl';
 import { usePersistentState } from '../../hooks/usePersistentState';

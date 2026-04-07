@@ -1,82 +1,19 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "productName": "firewood",
+  "version": "0.5.1",
+  "identifier": "com.ifmagic.firewood",
+  "mainBinaryName": "firewood",
   "build": {
     "beforeBuildCommand": "npm run build",
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:5173",
-    "distDir": "../dist"
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "firewood",
-    "version": "0.5.1"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "process": {
-        "relaunch": true
-      },
-      "shell": {
-        "open": true
-      },
-      "dialog": {
-        "save": true
-      },
-      "fs": {
-        "writeFile": true,
-        "scope": ["$HOME/**", "$DOWNLOAD/**", "$DESKTOP/**", "$DOCUMENT/**"]
-      }
-    },
-    "bundle": {
-      "active": true,
-      "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.ifmagic.firewood",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
-      "targets": ["nsis", "dmg", "updater"],
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": "",
-        "nsis": {
-          "installMode": "both"
-        }
-      }
-    },
+  "app": {
+    "withGlobalTauri": false,
     "security": {
       "csp": null
-    },
-    "updater": {
-      "active": true,
-      "dialog": false,
-      "endpoints": [
-        "https://github.com/ifmagic/firewood/releases/latest/download/latest.json"
-      ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENCREFCN0MxQjA3RTZFMjEKUldRaGJuNnd3YmZheTM0TzRkdFFuNDRwcW4wZ3VrZnJOb2FPMjV2OGtWZG5yQ3FrUjFYaU04TlMK"
-    },
-    "systemTray": {
-      "iconPath": "icons/tray-icon.png",
-      "iconAsTemplate": false
     },
     "windows": [
       {
@@ -85,8 +22,51 @@
         "resizable": true,
         "title": "Firewood",
         "width": 800,
-        "fileDropEnabled": false
+        "dragDropEnabled": false
       }
     ]
+  },
+  "bundle": {
+    "active": true,
+    "category": "DeveloperTool",
+    "copyright": "",
+    "createUpdaterArtifacts": "v1Compatible",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": [],
+    "targets": ["nsis", "dmg"],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "installMode": "both"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENCREFCN0MxQjA3RTZFMjEKUldRaGJuNnd3YmZheTM0TzRkdFFuNDRwcW4wZ3VrZnJOb2FPMjV2OGtWZG5yQ3FrUjFYaU04TlMK",
+      "endpoints": [
+        "https://github.com/ifmagic/firewood/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

@@ -3,8 +3,8 @@ import { Button, Radio, Upload, message, Typography, Slider, Switch, Input } fro
 import { FilePdfOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import jsPDF from 'jspdf';
-import { save } from '@tauri-apps/api/dialog';
-import { writeBinaryFile } from '@tauri-apps/api/fs';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeFile } from '@tauri-apps/plugin-fs';
 import ToolLayout from '../../components/ToolLayout';
 import dayjs from 'dayjs';
 import styles from './ImgToPdf.module.css';
@@ -319,7 +319,7 @@ export default function ImgToPdf() {
       } else {
         pdfBytes = await buildPDF(items, perPage, layoutDir, imageScalePct / 100, pageMargin, lockUniformWhenTwo);
       }
-      await writeBinaryFile(savePath, pdfBytes);
+      await writeFile(savePath, pdfBytes);
       message.success('PDF 已保存');
     } catch (e) {
       message.error(`生成失败：${(e as Error).message}`);

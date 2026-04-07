@@ -4,14 +4,13 @@
 mod translate;
 
 use tauri::{
-    CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, SystemTray, SystemTrayEvent,
-    SystemTrayMenu, SystemTrayMenuItem,
+    menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager,
 };
 
 fn show_window(app: &tauri::AppHandle) {
-    #[cfg(target_os = "macos")]
-    let _ = app.show();
-    if let Some(window) = app.get_window("main") {
+    if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();
@@ -19,94 +18,134 @@ fn show_window(app: &tauri::AppHandle) {
 }
 
 fn main() {
-    let show = CustomMenuItem::new("show".to_string(), "Show Window");
-    let check_for_updates_tray =
-        CustomMenuItem::new("check_for_updates".to_string(), "Check for Updates…");
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(show)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(check_for_updates_tray)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit);
-
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
-    let mut builder = tauri::Builder::default()
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             show_window(app);
         }));
 
-    #[cfg(target_os = "macos")]
-    {
-        let about_firewood = CustomMenuItem::new("about_firewood".to_string(), "About Firewood");
-        let check_for_updates =
-            CustomMenuItem::new("check_for_updates".to_string(), "Check for Updates…");
-        let mut menu = Menu::os_default("Firewood");
-
-        if let Some(MenuEntry::Submenu(app_submenu)) = menu.items.first_mut() {
-            if !app_submenu.inner.items.is_empty() {
-                app_submenu.inner.items[0] = about_firewood.into();
-            }
-
-            let insert_index = app_submenu
-                .inner
-                .items
-                .iter()
-                .position(|item| matches!(item, MenuEntry::NativeItem(MenuItem::Separator)))
-                .unwrap_or(app_submenu.inner.items.len());
-            app_submenu
-                .inner
-                .items
-                .insert(insert_index, check_for_updates.into());
-        }
-
-        builder = builder.menu(menu).on_menu_event(move |event| {
-            if event.menu_item_id() == "about_firewood" {
-                let _ = event.window().app_handle().emit_all("app://about-firewood", ());
-            } else if event.menu_item_id() == "check_for_updates" {
-                let _ = event.window().app_handle().emit_all("app://check-for-updates", ());
-            }
-        });
-    }
-
-    let app = builder
+    builder
         .invoke_handler(tauri::generate_handler![
             translate::baidu_translate,
             translate::tencent_translate,
         ])
-        .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::LeftClick { .. } => {
-                show_window(app);
+        .setup(|app| {
+            // ── Tray icon ──
+            let show_item =
+                MenuItemBuilder::with_id("show", "Show Window").build(app)?;
+            let check_updates_tray =
+                MenuItemBuilder::with_id("check_for_updates", "Check for Updates…")
+                    .build(app)?;
+            let quit_item =
+                MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let tray_menu = MenuBuilder::new(app)
+                .item(&show_item)
+                .separator()
+                .item(&check_updates_tray)
+                .separator()
+                .item(&quit_item)
+                .build()?;
+
+            TrayIconBuilder::new()
+                .icon(tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?)
+                .icon_as_template(false)
+                .menu(&tray_menu)
+                .on_menu_event(move |app, event| match event.id().as_ref() {
+                    "show" => {
+                        show_window(app);
+                    }
+                    "check_for_updates" => {
+                        show_window(app);
+                        let _ = app.emit("app://check-for-updates", ());
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        show_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
+            // ── macOS application menu ──
+            #[cfg(target_os = "macos")]
+            {
+                let about_item =
+                    MenuItemBuilder::with_id("about_firewood", "About Firewood")
+                        .build(app)?;
+                let check_updates_menu =
+                    MenuItemBuilder::with_id("menu_check_for_updates", "Check for Updates…")
+                        .build(app)?;
+                let app_submenu = SubmenuBuilder::new(app, "Firewood")
+                    .item(&about_item)
+                    .item(&check_updates_menu)
+                    .separator()
+                    .item(&PredefinedMenuItem::hide(app, None)?)
+                    .item(&PredefinedMenuItem::hide_others(app, None)?)
+                    .item(&PredefinedMenuItem::show_all(app, None)?)
+                    .separator()
+                    .item(&PredefinedMenuItem::quit(app, None)?)
+                    .build()?;
+
+                let edit_submenu = SubmenuBuilder::new(app, "Edit")
+                    .undo()
+                    .redo()
+                    .separator()
+                    .cut()
+                    .copy()
+                    .paste()
+                    .select_all()
+                    .build()?;
+
+                let window_submenu = SubmenuBuilder::new(app, "Window")
+                    .minimize()
+                    .close_window()
+                    .build()?;
+
+                let menu = MenuBuilder::new(app)
+                    .item(&app_submenu)
+                    .item(&edit_submenu)
+                    .item(&window_submenu)
+                    .build()?;
+                app.set_menu(menu)?;
+
+                app.on_menu_event(move |app, event| {
+                    if event.id() == about_item.id() {
+                        let _ = app.emit("app://about-firewood", ());
+                    } else if event.id() == check_updates_menu.id() {
+                        let _ = app.emit("app://check-for-updates", ());
+                    }
+                });
             }
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "show" => {
-                    show_window(app);
-                }
-                "check_for_updates" => {
-                    show_window(app);
-                    let _ = app.emit_all("app://check-for-updates", ());
-                }
-                "quit" => {
-                    app.exit(0);
-                }
-                _ => {}
-            },
-            _ => {}
+
+            Ok(())
         })
-        .on_window_event(|event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
-                let app = event.window().app_handle();
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let app = window.app_handle();
                 #[cfg(target_os = "macos")]
-                let _ = app.hide();
+                {
+                    let _ = app.hide();
+                }
                 #[cfg(not(target_os = "macos"))]
-                let _ = event.window().hide();
+                {
+                    let _ = window.hide();
+                }
                 api.prevent_close();
             }
         })
-        .build(tauri::generate_context!())
-        .expect("error while building tauri application");
-
-    app.run(|_, _| {});
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
-import { relaunch } from '@tauri-apps/api/process';
+import { check, type Update } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { notification, Button, Progress, Space } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import { cacheUpdateNotes, extractChangelog } from '../../utils/updateNotes';
@@ -48,13 +48,10 @@ function MarkdownBody({ content }: { content: string }) {
 }
 
 export default function Updater() {
-  const [downloading, setDownloading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const pendingUpdate = useRef<Update | null>(null);
 
   useEffect(() => {
-    // 启动后 3 秒检查一次
     const timer = setTimeout(() => checkForUpdate(), 3000);
-    // 之后每 5 小时检查一次
     const interval = setInterval(() => checkForUpdate(), 5 * 60 * 60 * 1000);
 
     const unlistenPromise = listen('app://check-for-updates', async () => {
@@ -70,16 +67,20 @@ export default function Updater() {
 
   const checkForUpdate = async (manual = false) => {
     try {
-      const { shouldUpdate, manifest } = await checkUpdate();
-      if (manifest?.body) {
-        cacheUpdateNotes({
-          version: manifest.version,
-          body: extractChangelog(manifest.body),
-          checkedAt: Date.now(),
+      const update = await check();
+      if (update) {
+        if (update.body) {
+          cacheUpdateNotes({
+            version: update.version,
+            body: extractChangelog(update.body),
+            checkedAt: Date.now(),
+          });
+        }
+        pendingUpdate.current = update;
+        showUpdateNotification({
+          version: update.version,
+          body: update.body ?? null,
         });
-      }
-      if (shouldUpdate && manifest) {
-        showUpdateNotification({ version: manifest.version, body: manifest.body ?? null });
       } else if (manual) {
         notification.success({
           message: '当前已是最新版本',
@@ -87,7 +88,6 @@ export default function Updater() {
         });
       }
     } catch {
-      // 网络不可达时静默忽略
       if (manual) {
         notification.error({
           message: '检查更新失败',
@@ -113,12 +113,7 @@ export default function Updater() {
           <Button size="small" onClick={() => notification.destroy(key)}>
             稍后更新
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            loading={downloading}
-            onClick={() => startUpdate(key)}
-          >
+          <Button type="primary" size="small" onClick={() => startUpdate(key)}>
             立即更新
           </Button>
         </Space>
@@ -127,42 +122,44 @@ export default function Updater() {
   };
 
   const startUpdate = async (notifKey: string) => {
-    notification.destroy(notifKey);
-    setDownloading(true);
-    setProgress(0);
+    const update = pendingUpdate.current;
+    if (!update) return;
 
-    // 显示下载进度通知
+    notification.destroy(notifKey);
     const downloadKey = 'firewood-downloading';
-    notification.open({
-      key: downloadKey,
-      message: '正在下载更新…',
-      description: <ProgressBar progress={progress} />,
-      duration: 0,
-      placement: 'bottomRight',
-    });
+
+    const showProgress = (pct: number) => {
+      notification.open({
+        key: downloadKey,
+        message: '正在下载更新…',
+        description: <Progress percent={Math.round(pct)} size="small" />,
+        duration: 0,
+        placement: 'bottomRight',
+      });
+    };
+
+    showProgress(0);
 
     try {
-      // 模拟进度（Tauri v1 updater 不暴露进度事件，用动画代替）
-      const progressTimer = setInterval(() => {
-        setProgress((p) => {
-          const next = p + Math.random() * 8;
-          if (next >= 95) {
-            clearInterval(progressTimer);
-            return 95;
-          }
-          notification.open({
-            key: downloadKey,
-            message: '正在下载更新…',
-            description: <ProgressBar progress={next} />,
-            duration: 0,
-            placement: 'bottomRight',
-          });
-          return next;
-        });
-      }, 300);
+      let downloaded = 0;
+      let contentLength = 0;
 
-      await installUpdate();
-      clearInterval(progressTimer);
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case 'Started':
+            contentLength = event.data.contentLength ?? 0;
+            break;
+          case 'Progress':
+            downloaded += event.data.chunkLength;
+            if (contentLength > 0) {
+              showProgress(Math.min((downloaded / contentLength) * 100, 99));
+            }
+            break;
+          case 'Finished':
+            showProgress(100);
+            break;
+        }
+      });
 
       notification.destroy(downloadKey);
       notification.success({
@@ -174,7 +171,6 @@ export default function Updater() {
 
       setTimeout(() => relaunch(), 2000);
     } catch (e) {
-      setDownloading(false);
       notification.destroy(downloadKey);
       notification.error({
         message: '更新失败',
@@ -185,8 +181,4 @@ export default function Updater() {
   };
 
   return null;
-}
-
-function ProgressBar({ progress }: { progress: number }) {
-  return <Progress percent={Math.round(progress)} size="small" />;
 }
